@@ -1,38 +1,39 @@
 import { WalletDisconnectButton } from "@solana/wallet-adapter-react-ui";
 import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; // Import CSS cho Quill
+import "react-quill/dist/quill.snow.css"; 
 import "./style.css";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import { format } from "date-fns";
-import { Network, ShyftSdk } from "@shyft-to/js";
 import axios from "axios";
+import ToastProvider from "../hooks/useToastProvider";
+
 const ThemHopDong = () => {
   const { connected, publicKey } = useWallet();
-  // const shyft = new ShyftSdk({
-  //   apiKey: "i0mjsr1g8kFlAvEj",
-  //   network: Network.Devnet,
-  // });
   const navigate = useNavigate();
   const currentDate = new Date();
   const [contract, setContract] = useState({
     name: "",
     id: "",
-    ngaytao: new Date(),
-    noidung: "",
+    dateCreated: currentDate,
+    message: "",
     partyA: { name: "", email: "" },
     partyB: { name: "", email: "" },
-    // Thêm các trường thông tin hợp đồng khác
   });
+
   useEffect(() => {
     if (!connected) {
       navigate("/");
     }
   }, [connected, navigate]);
+
   const handleChange = (value) => {
-    setContract({ ...contract, noidung: value });
+    setContract((prevContract) => ({
+      ...prevContract,
+      message: value,
+    }));
   };
 
   const handleInputChange = (e) => {
@@ -51,11 +52,11 @@ const ThemHopDong = () => {
     }
   };
 
-  const HandleOnclickQL = () => {
+  const handleBack = () => {
     navigate("/danhsachhopdong");
   };
 
-  const Handleok = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!publicKey) {
@@ -63,44 +64,30 @@ const ThemHopDong = () => {
       return;
     }
 
-    const metadataUri =
-      "https://brown-loyal-stoat-734.mypinata.cloud/ipfs/QmR5Tyx3MvpiCKtjTVC4wVzRigpujCv9bnvQKU4ZMQzN5N"; // URI metadata của bạn
-
     const data = {
-      network: "devnet",
-      metadata_uri: metadataUri,
-      max_supply: 0,
-      collection_address: "3F3G122hfRQ6E7aRQLhdXvabxtfhGHF89UVLvHR4pmn9", // Địa chỉ của bộ sưu tập
-      receiver: publicKey.toBase58(), // Địa chỉ ví nhận
-      fee_payer: "2fmz8SuNVyxEP6QwKQs6LNaT2ATszySPEJdhUDesxktc", // Địa chỉ ví trả phí
-      service_charge: {
-        receiver: "BFefyp7jNF5Xq2A4JDLLFFGpxLq5oPEFKBAQ46KJHW2R",
-        amount: 0.01,
-      },
-      priority_fee: 100,
+      name: contract.name,
+      id: contract.id,
+      dateCreated: contract.dateCreated,
+      message: contract.message,
+      addressCreator: publicKey.toBase58(), 
+      emailA: contract.partyA.email,
+      nameA: contract.partyA.name,
+      emailB: contract.partyB.email,
+      nameB: contract.partyB.name,
     };
 
     try {
-      const response = await fetch(
-        "https://api.shyft.to/sol/v1/nft/create_from_metadata",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": "i0mjsr1g8kFlAvEj",
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("Response data:", result);
+      const response = await axios.post("http://localhost:1510/api/contract/createContract", data);
+      console.log("Response data:", response.data);
+      // alert("Contract created successfully");
+      ToastProvider("success", "Contract created successfully")
+      setTimeout(() => {
+        navigate("/danhsachhopdong");
+      },2000)
     } catch (error) {
-      console.error("Error creating NFT:", error);
+      console.error("Error creating contract:", error);
+      // alert("Error creating contract: " + error.response ? error.response.data.message : error.message);
+      ToastProvider("error", "Contract created failed !!")
     }
   };
 
@@ -110,56 +97,48 @@ const ThemHopDong = () => {
         <WalletDisconnectButton />
       </div>
       <div className="w-25">
-        <Button onClick={HandleOnclickQL} variant="primary">
+        <Button onClick={handleBack} variant="primary">
           Trở về
         </Button>
       </div>
-      {/* <div className="mt-4">
-        <label>Chọn file:</label>
-        <input
-          type="file"
-          name="file"
-          onChange={(e) => setfile(e.target.files[0])}
-        />
-      </div> */}
       <div className="row justify-content-center">
         <div className="col-md-8">
           <div className="mb-4 d-flex">
             <div>
               <div>
-                <label>Tên hợp đồng:</label>
+                <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Tên hợp đồng:</label>
                 <input
                   type="text"
                   name="name"
                   className="ms-2"
+                  style={{width: "230px"}}
                   value={contract.name}
                   onChange={handleInputChange}
                 />
               </div>
               <div className="mt-4">
-                <label>Mã hợp đồng:</label>
+                <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Mã hợp đồng:</label>
                 <input
                   className="ms-2"
                   type="text"
                   name="id"
+                  style={{width: "230px"}}
                   value={contract.id}
                   onChange={handleInputChange}
                 />
               </div>
             </div>
-
             <div className="ms-3">
-              <label>
+              <label style={{ fontWeight: "bold", paddingRight: '6px' }}>
                 Ngày tạo: {format(currentDate, "dd/MM/yyyy HH:mm:ss")}
               </label>
             </div>
           </div>
-
           <div>
             <div className="mb-3">
               <ReactQuill
                 className="quill-editor"
-                value={contract.noidung}
+                value={contract.message}
                 onChange={handleChange}
                 placeholder="Nội dung hợp đồng"
               />
@@ -169,9 +148,10 @@ const ThemHopDong = () => {
                 <div className="col-6">
                   <div>
                     <h3>Bên A</h3>
-                    <label>Tên:</label>
+                    <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Tên:</label>
                     <input
                       className="ms-5"
+                      style={{width: "230px"}}
                       type="text"
                       name="partyA.name"
                       value={contract.partyA.name}
@@ -179,9 +159,9 @@ const ThemHopDong = () => {
                     />
                   </div>
                   <div className="mt-4">
-                    <label>Email:</label>
+                    <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Email:</label>
                     <input
-                      style={{ marginLeft: "34px" }}
+                       style={{ marginLeft: "34px" ,width: "230px"}}
                       type="email"
                       name="partyA.email"
                       value={contract.partyA.email}
@@ -192,9 +172,10 @@ const ThemHopDong = () => {
                 <div className="col-6">
                   <div className="ms-5">
                     <h3>Bên B</h3>
-                    <label>Tên:</label>
+                    <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Tên:</label>
                     <input
                       className="ms-5"
+                      style={{width: "230px"}}
                       type="text"
                       name="partyB.name"
                       value={contract.partyB.name}
@@ -202,9 +183,9 @@ const ThemHopDong = () => {
                     />
                   </div>
                   <div className="mt-4 ms-5">
-                    <label>Email:</label>
+                    <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Email:</label>
                     <input
-                      style={{ marginLeft: "34px" }}
+                      style={{ marginLeft: "34px" ,width: "230px"}}
                       type="email"
                       name="partyB.email"
                       value={contract.partyB.email}
@@ -213,9 +194,8 @@ const ThemHopDong = () => {
                   </div>
                 </div>
               </div>
-
               <div className="w-25 ms-auto mt-5">
-                <button className="btn btn-primary" onClick={Handleok}>
+                <button className="btn btn-primary" onClick={handleSubmit}>
                   Thêm
                 </button>
               </div>
