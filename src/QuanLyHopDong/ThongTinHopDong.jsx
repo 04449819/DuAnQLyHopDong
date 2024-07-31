@@ -49,40 +49,28 @@ const ThongTinHopDong = () => {
         name: contractName,
         status: "pending"
       });
-      
-      const { uid } = response.data.data;
-
+  
+      const { uid, name, emailB } = response.data.data; 
+  
+      await axios.post('http://localhost:1510/api/contract/sendMail', {
+        gmail: emailB, 
+        text: `Please update your contract using the following link: <a href="http://localhost:3000/CapNhapHopDong/${uid}">Update Contract</a>`,
+        uid: uid,
+        title: name
+      });
+  
       ToastProvider("success", "Contract updated successfully.");
       setTimeout(() => {
-        window.open(`http://localhost:3000/CapNhapHopDong/${uid}`, '_blank');
-      }, 2000);
-
-      const intervalId = setInterval(async () => {
-        try {
-          const statusResponse = await axios.get(`http://localhost:1510/api/contract/getContractByID/${id}`);
-          if (statusResponse.data.data.status === "success") {
-            clearInterval(intervalId);
-            ToastProvider("success", "Contract updated successfully.");
-            setTimeout(() => {
-              navigate("/danhsachhopdong");
-            }, 2000);
-           
-          }
-        } catch (error) {
-          console.error("Error checking contract status:", error);
-          clearInterval(intervalId);
-          ToastProvider("error", "Error checking contract status.");
-        }
-      }, 2000);
-
-      setTimeout(() => {
-        clearInterval(intervalId);
-      }, 10000);
-
+        navigate("/danhsachhopdong");
+      }, 6000);
+  
     } catch (error) {
       ToastProvider("error", "Error updating contract !!");
     }
   };
+  
+  
+  
 
   const handleBack = () => {
     navigate("/danhsachhopdong");
