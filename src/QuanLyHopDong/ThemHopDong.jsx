@@ -1,7 +1,7 @@
 import { WalletDisconnectButton } from "@solana/wallet-adapter-react-ui";
 import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; 
+import "react-quill/dist/quill.snow.css";
 import "./style.css";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import Button from "react-bootstrap/Button";
 import { format } from "date-fns";
 import axios from "axios";
 import ToastProvider from "../hooks/useToastProvider";
+
 
 const ThemHopDong = () => {
   const { connected, publicKey } = useWallet();
@@ -22,6 +23,12 @@ const ThemHopDong = () => {
     partyA: { name: "", email: "" },
     partyB: { name: "", email: "" },
   });
+
+  const [file, setFile] = useState(null)
+
+  // const handleInputChange = (e) => {
+  //   setFile(e.target.files[0]);
+  // };
 
   useEffect(() => {
     if (!connected) {
@@ -56,6 +63,39 @@ const ThemHopDong = () => {
     navigate("/danhsachhopdong");
   };
 
+  const handleSubmitNft = async () => {
+    const formData = {
+      network: "testnet",
+      creator_wallet: publicKey.toBase58(),
+      name: `${contract.name}`,
+      symbol: "CC",
+      description: `${contract.message}`,
+      attributes: JSON.stringify([{ trait_type: "Contract Name", value: contract.name }, { trait_type: "Contract ID", value: contract.id }]),
+      external_url: "https://shyft.to",
+      max_supply: "1",
+      royalty: "5",
+      fee_payer: publicKey.toBase58()
+    }
+
+    const myHeaders = new Headers();
+    myHeaders.append("x-api-key", "D9kTx8dLza3hm1Ff");
+
+    const formdata = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      formdata.append(key, value);
+    });
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: formdata,
+      redirect: 'follow'
+    };
+
+    const createResult = await fetch("https://api.shyft.to/sol/v2/nft/create", requestOptions)
+    return createResult.json();
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -69,7 +109,7 @@ const ThemHopDong = () => {
       id: contract.id,
       dateCreated: contract.dateCreated,
       message: contract.message,
-      addressCreator: publicKey.toBase58(), 
+      addressCreator: publicKey.toBase58(),
       emailA: contract.partyA.email,
       nameA: contract.partyA.name,
       emailB: contract.partyB.email,
@@ -77,16 +117,15 @@ const ThemHopDong = () => {
     };
 
     try {
+      await handleSubmitNft()
       const response = await axios.post("http://localhost:1510/api/contract/createContract", data);
       console.log("Response data:", response.data);
-      // alert("Contract created successfully");
       ToastProvider("success", "Contract created successfully")
       setTimeout(() => {
         navigate("/danhsachhopdong");
-      },2000)
+      }, 2000)
     } catch (error) {
       console.error("Error creating contract:", error);
-      // alert("Error creating contract: " + error.response ? error.response.data.message : error.message);
       ToastProvider("error", "Contract created failed !!")
     }
   };
@@ -111,7 +150,7 @@ const ThemHopDong = () => {
                   type="text"
                   name="name"
                   className="ms-2"
-                  style={{width: "230px"}}
+                  style={{ width: "230px" }}
                   value={contract.name}
                   onChange={handleInputChange}
                 />
@@ -122,7 +161,7 @@ const ThemHopDong = () => {
                   className="ms-2"
                   type="text"
                   name="id"
-                  style={{width: "230px"}}
+                  style={{ width: "230px" }}
                   value={contract.id}
                   onChange={handleInputChange}
                 />
@@ -151,7 +190,7 @@ const ThemHopDong = () => {
                     <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Tên:</label>
                     <input
                       className="ms-5"
-                      style={{width: "230px"}}
+                      style={{ width: "230px" }}
                       type="text"
                       name="partyA.name"
                       value={contract.partyA.name}
@@ -161,7 +200,7 @@ const ThemHopDong = () => {
                   <div className="mt-4">
                     <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Email:</label>
                     <input
-                       style={{ marginLeft: "34px" ,width: "230px"}}
+                      style={{ marginLeft: "34px", width: "230px" }}
                       type="email"
                       name="partyA.email"
                       value={contract.partyA.email}
@@ -175,7 +214,7 @@ const ThemHopDong = () => {
                     <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Tên:</label>
                     <input
                       className="ms-5"
-                      style={{width: "230px"}}
+                      style={{ width: "230px" }}
                       type="text"
                       name="partyB.name"
                       value={contract.partyB.name}
@@ -185,7 +224,7 @@ const ThemHopDong = () => {
                   <div className="mt-4 ms-5">
                     <label style={{ fontWeight: "bold", paddingRight: '6px' }}>Email:</label>
                     <input
-                      style={{ marginLeft: "34px" ,width: "230px"}}
+                      style={{ marginLeft: "34px", width: "230px" }}
                       type="email"
                       name="partyB.email"
                       value={contract.partyB.email}
